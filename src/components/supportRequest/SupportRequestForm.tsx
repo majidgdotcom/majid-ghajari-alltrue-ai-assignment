@@ -17,6 +17,7 @@ import CloseIcon from "@mui/icons-material/Close";
 import { SupportRequestData } from "../../interfaces/ISupportRequest";
 import { useDispatch } from "react-redux";
 import { submitSupportRequest } from "../../stateManagement/supportRequestSlice";
+import { useSnackbar } from "notistack";
 
 const schema = z.object({
   fullName: z.string().min(1, "Full Name is required"),
@@ -31,8 +32,17 @@ const schema = z.object({
 const SupportRequestForm: React.FC = () => {
   const [open, setOpen] = useState(false);
   const dispatch = useDispatch();
+  const { enqueueSnackbar } = useSnackbar();
 
-  const { control, handleSubmit, register, setValue, watch, reset } = useForm<SupportRequestData>({
+  const {
+    control,
+    handleSubmit,
+    register,
+    setValue,
+    watch,
+    reset,
+    formState: { errors },
+  } = useForm<SupportRequestData>({
     resolver: zodResolver(schema),
     defaultValues: {
       fullName: "",
@@ -49,8 +59,12 @@ const SupportRequestForm: React.FC = () => {
   });
 
   const onSubmit = (data: SupportRequestData) => {
-    console.log("Submitted Data:", data);
+    if (Object.keys(errors).length > 0) {
+      enqueueSnackbar("Please fix the errors before submitting", { variant: "error" });
+      return;
+    }
     dispatch(submitSupportRequest(data));
+    enqueueSnackbar("Support request submitted successfully", { variant: "success" });
     reset();
     setOpen(false);
   };
@@ -73,8 +87,23 @@ const SupportRequestForm: React.FC = () => {
         </DialogTitle>
         <DialogContent>
           <form onSubmit={handleSubmit(onSubmit)} noValidate>
-            <TextField {...register("fullName")} label="Full Name" fullWidth margin="normal" />
-            <TextField {...register("email")} label="Email" type="email" fullWidth margin="normal" />
+            <TextField
+              {...register("fullName")}
+              label="Full Name"
+              fullWidth
+              margin="normal"
+              error={!!errors.fullName}
+              helperText={errors.fullName?.message}
+            />
+            <TextField
+              {...register("email")}
+              label="Email"
+              type="email"
+              fullWidth
+              margin="normal"
+              error={!!errors.email}
+              helperText={errors.email?.message}
+            />
             <TextField {...register("issueType")} select fullWidth margin="normal" label="Issue Type">
               <MenuItem value="Bug Report">Bug Report</MenuItem>
               <MenuItem value="Feature Request">Feature Request</MenuItem>
@@ -90,6 +119,8 @@ const SupportRequestForm: React.FC = () => {
                   value={field.value.join(", ")}
                   onChange={(e) => setValue("tags", e.target.value.split(",").map((tag) => tag.trim()))}
                   margin="normal"
+                  error={!!errors.tags}
+                  helperText={errors.tags?.message}
                 />
               )}
             />
@@ -97,7 +128,13 @@ const SupportRequestForm: React.FC = () => {
               Steps to Reproduce:
               {fields.map((field, index) => (
                 <Box key={field.id} display="flex" alignItems="center" mt={1}>
-                  <TextField {...register(`steps.${index}.step`)} fullWidth label={`Step ${index + 1}`} />
+                  <TextField
+                    {...register(`steps.${index}.step`)}
+                    fullWidth
+                    label={`Step ${index + 1}`}
+                    error={!!errors.steps?.[index]?.step}
+                    helperText={errors.steps?.[index]?.step?.message}
+                  />
                   <Button onClick={() => remove(index)} color="error" sx={{ ml: 1 }}>
                     Remove
                   </Button>
