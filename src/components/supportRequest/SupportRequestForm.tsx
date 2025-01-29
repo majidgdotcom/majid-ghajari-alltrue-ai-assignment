@@ -1,8 +1,19 @@
-import React from "react";
+import React, { useState } from "react";
 import { useForm, Controller, useFieldArray } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
-import { Box, Button, TextField, MenuItem, Chip } from "@mui/material";
+import {
+  Dialog,
+  DialogTitle,
+  DialogContent,
+  DialogActions,
+  Box,
+  Button,
+  TextField,
+  MenuItem,
+  IconButton,
+} from "@mui/material";
+import CloseIcon from "@mui/icons-material/Close";
 import { SupportRequestData } from "../../interfaces/ISupportRequest";
 import { useDispatch } from "react-redux";
 import { submitSupportRequest } from "../../stateManagement/supportRequestSlice";
@@ -12,10 +23,15 @@ const schema = z.object({
   email: z.string().email("Invalid email address"),
   issueType: z.enum(["General Inquiry", "Feature Request", "Bug Report"]),
   tags: z.array(z.string()).min(1, "At least one tag is required"),
-  steps: z.array(z.object({ step: z.string().min(1, "Step is required") })).min(1, "At least one step is required"),
+  steps: z
+    .array(z.object({ step: z.string().min(1, "Step is required") }))
+    .min(1, "At least one step is required"),
 });
 
 const SupportRequestForm: React.FC = () => {
+  const [open, setOpen] = useState(false);
+  const dispatch = useDispatch();
+
   const { control, handleSubmit, register, setValue, watch, reset } = useForm<SupportRequestData>({
     resolver: zodResolver(schema),
     defaultValues: {
@@ -27,8 +43,6 @@ const SupportRequestForm: React.FC = () => {
     },
   });
 
-  const dispatch = useDispatch();
-
   const { fields, append, remove } = useFieldArray({
     control,
     name: "steps",
@@ -38,81 +52,73 @@ const SupportRequestForm: React.FC = () => {
     console.log("Submitted Data:", data);
     dispatch(submitSupportRequest(data));
     reset();
+    setOpen(false);
   };
 
   return (
-    <Box p={4} maxWidth={500} mx="auto">
-      <form onSubmit={handleSubmit(onSubmit)} noValidate>
-        <Box mt={2}>
-          <TextField
-            {...register("fullName")}
-            variant="outlined"
-            fullWidth
-            label="Full Name"
-            error={!!watch("fullName") && !watch("fullName").trim()}
-            helperText={watch("fullName") && !watch("fullName").trim() ? "Full Name is required" : ""}
-          />
-        </Box>
-        <Box mt={2}>
-          <TextField
-            {...register("email")}
-            variant="outlined"
-            fullWidth
-            label="Email Address"
-            type="email"
-            error={!!watch("email") && !watch("email").includes("@")}
-            helperText={watch("email") && !watch("email").includes("@") ? "Invalid email address" : ""}
-          />
-        </Box>
-        <Box mt={2}>
-          <TextField {...register("issueType")} select fullWidth variant="outlined" label="Issue Type">
-            <MenuItem value="Bug Report">Bug Report</MenuItem>
-            <MenuItem value="Feature Request">Feature Request</MenuItem>
-            <MenuItem value="General Inquiry">General Inquiry</MenuItem>
-          </TextField>
-        </Box>
-        <Box mt={2}>
-          <Controller
-            control={control}
-            name="tags"
-            render={({ field }) => (
-              <TextField
-                variant="outlined"
-                fullWidth
-                label="Tags (comma separated)"
-                value={field.value.join(", ")}
-                onChange={(e) => setValue("tags", e.target.value.split(",").map((tag) => tag.trim()))}
-                helperText="Example: UI, Backend, Performance"
-              />
-            )}
-          />
-        </Box>
-        <Box mt={2}>
-          <label>Steps to Reproduce:</label>
-          {fields.map((field, index) => (
-            <Box key={field.id} display="flex" alignItems="center" mt={1}>
-              <TextField
-                {...register(`steps.${index}.step`)}
-                variant="outlined"
-                fullWidth
-                label={`Step ${index + 1}`}
-              />
-              <Button onClick={() => remove(index)} color="error" sx={{ ml: 1 }}>
-                Remove
+    <>
+      <Button variant="contained" color="primary" onClick={() => setOpen(true)}>
+        Submit Support Request
+      </Button>
+      <Dialog open={open} onClose={() => setOpen(false)} maxWidth="sm" fullWidth>
+        <DialogTitle>
+          Submit Support Request
+          <IconButton
+            aria-label="close"
+            onClick={() => setOpen(false)}
+            sx={{ position: "absolute", right: 8, top: 8 }}
+          >
+            <CloseIcon />
+          </IconButton>
+        </DialogTitle>
+        <DialogContent>
+          <form onSubmit={handleSubmit(onSubmit)} noValidate>
+            <TextField {...register("fullName")} label="Full Name" fullWidth margin="normal" />
+            <TextField {...register("email")} label="Email" type="email" fullWidth margin="normal" />
+            <TextField {...register("issueType")} select fullWidth margin="normal" label="Issue Type">
+              <MenuItem value="Bug Report">Bug Report</MenuItem>
+              <MenuItem value="Feature Request">Feature Request</MenuItem>
+              <MenuItem value="General Inquiry">General Inquiry</MenuItem>
+            </TextField>
+            <Controller
+              control={control}
+              name="tags"
+              render={({ field }) => (
+                <TextField
+                  fullWidth
+                  label="Tags (comma separated)"
+                  value={field.value.join(", ")}
+                  onChange={(e) => setValue("tags", e.target.value.split(",").map((tag) => tag.trim()))}
+                  margin="normal"
+                />
+              )}
+            />
+            <Box mt={2}>
+              Steps to Reproduce:
+              {fields.map((field, index) => (
+                <Box key={field.id} display="flex" alignItems="center" mt={1}>
+                  <TextField {...register(`steps.${index}.step`)} fullWidth label={`Step ${index + 1}`} />
+                  <Button onClick={() => remove(index)} color="error" sx={{ ml: 1 }}>
+                    Remove
+                  </Button>
+                </Box>
+              ))}
+              <Button onClick={() => append({ step: "" })} variant="outlined" color="primary" sx={{ mt: 2 }}>
+                + Add Step
               </Button>
             </Box>
-          ))}
-          <Button onClick={() => append({ step: "" })} variant="outlined" color="primary" sx={{ mt: 2 }}>
-            + Add Step
+          </form>
+        </DialogContent>
+        <DialogActions>
+          <Button onClick={() => setOpen(false)} color="secondary">
+            Cancel
           </Button>
-        </Box>
-        <Box mt={4}>
-          <Button type="submit" fullWidth variant="contained" color="primary">
+          <Button type="submit" onClick={handleSubmit(onSubmit)} variant="contained" color="primary">
             Submit
           </Button>
-        </Box>
-      </form>
-    </Box>
+        </DialogActions>
+      </Dialog>
+    </>
   );
 };
 
