@@ -12,6 +12,11 @@ import {
   TextField,
   MenuItem,
   IconButton,
+  Select,
+  FormControl,
+  InputLabel,
+  OutlinedInput,
+  Chip,
 } from "@mui/material";
 import CloseIcon from "@mui/icons-material/Close";
 import { SupportRequestData } from "../../interfaces/ISupportRequest";
@@ -23,11 +28,13 @@ const schema = z.object({
   fullName: z.string().min(1, "Full Name is required"),
   email: z.string().email("Invalid email address"),
   issueType: z.enum(["General Inquiry", "Feature Request", "Bug Report"]),
-  tags: z.array(z.string()).min(1, "At least one tag is required"),
+  tags: z.array(z.enum(["UI", "Backend", "Performance"])).min(1, "At least one tag is required"),
   steps: z
     .array(z.object({ step: z.string().min(1, "Step is required") }))
     .min(1, "At least one step is required"),
 });
+
+const TAG_OPTIONS = ["UI", "Backend", "Performance"] as const;
 
 const SupportRequestForm: React.FC = () => {
   const [open, setOpen] = useState(false);
@@ -113,15 +120,28 @@ const SupportRequestForm: React.FC = () => {
               control={control}
               name="tags"
               render={({ field }) => (
-                <TextField
-                  fullWidth
-                  label="Tags (comma separated)"
-                  value={field.value.join(", ")}
-                  onChange={(e) => setValue("tags", e.target.value.split(",").map((tag) => tag.trim()))}
-                  margin="normal"
-                  error={!!errors.tags}
-                  helperText={errors.tags?.message}
-                />
+                <FormControl fullWidth margin="normal" error={!!errors.tags}>
+                  <InputLabel>Tags</InputLabel>
+                  <Select
+                    multiple
+                    value={field.value}
+                    onChange={(e) => setValue("tags", e.target.value as string[])}
+                    input={<OutlinedInput label="Tags" />}
+                    renderValue={(selected) => (
+                      <Box sx={{ display: "flex", gap: 0.5 }}>
+                        {selected.map((value) => (
+                          <Chip key={value} label={value} />
+                        ))}
+                      </Box>
+                    )}
+                  >
+                    {TAG_OPTIONS.map((tag) => (
+                      <MenuItem key={tag} value={tag}>
+                        {tag}
+                      </MenuItem>
+                    ))}
+                  </Select>
+                </FormControl>
               )}
             />
             <Box mt={2}>
