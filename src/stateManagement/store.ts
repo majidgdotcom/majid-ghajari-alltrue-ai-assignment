@@ -3,7 +3,7 @@ import supportRequestReducer from './supportRequestSlice';
 
 export const store = configureStore({
   reducer: {
-    form: supportRequestReducer,
+    supportRequest: supportRequestReducer,
   },
 });
 

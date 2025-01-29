@@ -1,14 +1,10 @@
 import { createSlice, PayloadAction } from '@reduxjs/toolkit';
 import { SupportRequestData } from '../interfaces/ISupportRequest';
 
-
-
-const initialState: SupportRequestData[] = [
-  { email: 'majidgdotcom@gmail.com', fullName: 'Majid Ghajari', issueType: 'Bug Report', steps: [{ step: '1' }], tags: ['problem'] }
-]
+const initialState: SupportRequestData[] = []
 
 const supportRequestSlice = createSlice({
-  name: 'form',
+  name: 'supportRequest',
   initialState,
   reducers: {
     submitSupportRequest: (state, action: PayloadAction<SupportRequestData>) => {

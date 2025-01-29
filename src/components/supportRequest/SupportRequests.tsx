@@ -12,7 +12,7 @@ import {
 } from "@mui/material";
 
 const SupportRequests: React.FC = () => {
-    const formData = useSelector((state: RootState) => state.form);
+    const formData = useSelector((state: RootState) => state.supportRequest);
 
     return (
         <Box p={4} maxWidth={900} mx="auto">
