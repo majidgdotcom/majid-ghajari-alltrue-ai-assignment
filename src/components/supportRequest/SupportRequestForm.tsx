@@ -17,6 +17,7 @@ import {
   InputLabel,
   OutlinedInput,
   Chip,
+  FormHelperText,
 } from "@mui/material";
 import CloseIcon from "@mui/icons-material/Close";
 import { SupportRequestData } from "../../interfaces/ISupportRequest";
@@ -157,7 +158,7 @@ const SupportRequestForm: React.FC = () => {
               )}
             />
             <Box mt={2}>
-              Steps to Reproduce:
+              Steps to Reproduce: {fields.length === 0 && <FormHelperText error sx={{ ml: 2 }}>At least one step is required</FormHelperText>}
               {fields.map((field, index) => (
                 <Box key={field.id} display="flex" alignItems="center" mt={1}>
                   <TextField
