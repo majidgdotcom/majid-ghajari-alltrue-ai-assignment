@@ -27,8 +27,12 @@ import { useSnackbar } from "notistack";
 const schema = z.object({
   fullName: z.string().min(1, "Full Name is required"),
   email: z.string().email("Invalid email address"),
-  issueType: z.enum(["General Inquiry", "Feature Request", "Bug Report"]),
-  tags: z.array(z.enum(["UI", "Backend", "Performance"])).min(1, "At least one tag is required"),
+  issueType: z.enum(["General Inquiry", "Feature Request", "Bug Report"], {
+    errorMap: () => {
+      return { message: "Issue Type is required" };
+    },
+  }),
+  tags: z.array(z.enum(["UI", "Backend", "Performance"])).optional(),
   steps: z
     .array(z.object({ step: z.string().min(1, "Step is required") }))
     .min(1, "At least one step is required"),
@@ -54,7 +58,7 @@ const SupportRequestForm: React.FC = () => {
     defaultValues: {
       fullName: "",
       email: "",
-      issueType: "Bug Report",
+      issueType: "",
       tags: [],
       steps: [{ step: "" }],
     },
@@ -111,10 +115,18 @@ const SupportRequestForm: React.FC = () => {
               error={!!errors.email}
               helperText={errors.email?.message}
             />
-            <TextField {...register("issueType")} select fullWidth margin="normal" label="Issue Type">
+            <TextField
+              {...register("issueType")}
+              select
+              fullWidth
+              margin="normal"
+              label="Issue Type"
+              error={!!errors.issueType}
+              helperText={errors.issueType?.message}>
               <MenuItem value="Bug Report">Bug Report</MenuItem>
               <MenuItem value="Feature Request">Feature Request</MenuItem>
               <MenuItem value="General Inquiry">General Inquiry</MenuItem>
+
             </TextField>
             <Controller
               control={control}
