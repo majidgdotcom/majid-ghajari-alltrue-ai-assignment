@@ -123,11 +123,12 @@ const SupportRequestForm: React.FC = () => {
               margin="normal"
               label="Issue Type"
               error={!!errors.issueType}
-              helperText={errors.issueType?.message}>
+              helperText={errors.issueType?.message}
+              value={watch("issueType") ?? ""}
+            >
               <MenuItem value="Bug Report">Bug Report</MenuItem>
               <MenuItem value="Feature Request">Feature Request</MenuItem>
               <MenuItem value="General Inquiry">General Inquiry</MenuItem>
-
             </TextField>
             <Controller
               control={control}
