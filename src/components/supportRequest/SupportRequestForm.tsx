@@ -29,9 +29,7 @@ const schema = z.object({
   fullName: z.string().min(1, "Full Name is required"),
   email: z.string().email("Invalid email address"),
   issueType: z.enum(["General Inquiry", "Feature Request", "Bug Report"], {
-    errorMap: () => {
-      return { message: "Issue Type is required" };
-    },
+    errorMap: () => ({ message: "Issue Type is required" }),
   }),
   tags: z.array(z.enum(["UI", "Backend", "Performance"])).optional(),
   steps: z
@@ -50,8 +48,6 @@ const SupportRequestForm: React.FC = () => {
     control,
     handleSubmit,
     register,
-    setValue,
-    watch,
     reset,
     formState: { errors },
   } = useForm<SupportRequestData>({
@@ -70,13 +66,16 @@ const SupportRequestForm: React.FC = () => {
     name: "steps",
   });
 
+  // handleSubmit already blocks submission when validation fails —
+  // no need to re-check errors inside onSubmit.
   const onSubmit = (data: SupportRequestData) => {
-    if (Object.keys(errors).length > 0) {
-      enqueueSnackbar("Please fix the errors before submitting", { variant: "error" });
-      return;
-    }
     dispatch(submitSupportRequest(data));
     enqueueSnackbar("Support request submitted successfully", { variant: "success" });
+    reset();
+    setOpen(false);
+  };
+
+  const handleClose = () => {
     reset();
     setOpen(false);
   };
@@ -86,19 +85,22 @@ const SupportRequestForm: React.FC = () => {
       <Button variant="contained" color="primary" onClick={() => setOpen(true)}>
         Submit Support Request
       </Button>
-      <Dialog open={open} onClose={() => setOpen(false)} maxWidth="sm" fullWidth>
+
+      <Dialog open={open} onClose={handleClose} maxWidth="sm" fullWidth>
         <DialogTitle>
           Submit Support Request
           <IconButton
             aria-label="close"
-            onClick={() => setOpen(false)}
+            onClick={handleClose}
             sx={{ position: "absolute", right: 8, top: 8 }}
           >
             <CloseIcon />
           </IconButton>
         </DialogTitle>
+
         <DialogContent>
           <form onSubmit={handleSubmit(onSubmit)} noValidate>
+            {/* Full Name */}
             <TextField
               {...register("fullName")}
               label="Full Name"
@@ -107,6 +109,8 @@ const SupportRequestForm: React.FC = () => {
               error={!!errors.fullName}
               helperText={errors.fullName?.message}
             />
+
+            {/* Email */}
             <TextField
               {...register("email")}
               label="Email"
@@ -116,20 +120,29 @@ const SupportRequestForm: React.FC = () => {
               error={!!errors.email}
               helperText={errors.email?.message}
             />
-            <TextField
-              {...register("issueType")}
-              select
-              fullWidth
-              margin="normal"
-              label="Issue Type"
-              error={!!errors.issueType}
-              helperText={errors.issueType?.message}
-              value={watch("issueType") ?? ""}
-            >
-              <MenuItem value="Bug Report">Bug Report</MenuItem>
-              <MenuItem value="Feature Request">Feature Request</MenuItem>
-              <MenuItem value="General Inquiry">General Inquiry</MenuItem>
-            </TextField>
+
+            {/* Issue Type — Controller is the correct pattern for MUI selects */}
+            <Controller
+              control={control}
+              name="issueType"
+              render={({ field }) => (
+                <TextField
+                  {...field}
+                  select
+                  fullWidth
+                  margin="normal"
+                  label="Issue Type"
+                  error={!!errors.issueType}
+                  helperText={errors.issueType?.message}
+                >
+                  <MenuItem value="Bug Report">Bug Report</MenuItem>
+                  <MenuItem value="Feature Request">Feature Request</MenuItem>
+                  <MenuItem value="General Inquiry">General Inquiry</MenuItem>
+                </TextField>
+              )}
+            />
+
+            {/* Tags */}
             <Controller
               control={control}
               name="tags"
@@ -139,7 +152,7 @@ const SupportRequestForm: React.FC = () => {
                   <Select
                     multiple
                     value={field.value}
-                    onChange={(e) => setValue("tags", e.target.value as string[])}
+                    onChange={field.onChange}
                     input={<OutlinedInput label="Tags" />}
                     renderValue={(selected) => (
                       <Box sx={{ display: "flex", gap: 0.5 }}>
@@ -158,8 +171,15 @@ const SupportRequestForm: React.FC = () => {
                 </FormControl>
               )}
             />
+
+            {/* Steps to Reproduce */}
             <Box mt={2}>
-              Steps to Reproduce: {fields.length === 0 && <FormHelperText error sx={{ ml: 2 }}>At least one step is required</FormHelperText>}
+              Steps to Reproduce:
+              {fields.length === 0 && (
+                <FormHelperText error sx={{ ml: 2 }}>
+                  At least one step is required
+                </FormHelperText>
+              )}
               {fields.map((field, index) => (
                 <Box key={field.id} display="flex" alignItems="center" mt={1}>
                   <TextField
@@ -174,17 +194,28 @@ const SupportRequestForm: React.FC = () => {
                   </Button>
                 </Box>
               ))}
-              <Button onClick={() => append({ step: "" })} variant="outlined" color="primary" sx={{ mt: 2 }}>
+              <Button
+                onClick={() => append({ step: "" })}
+                variant="outlined"
+                color="primary"
+                sx={{ mt: 2 }}
+              >
                 + Add Step
               </Button>
             </Box>
           </form>
         </DialogContent>
+
         <DialogActions>
-          <Button onClick={() => setOpen(false)} color="secondary">
+          <Button onClick={handleClose} color="secondary">
             Cancel
           </Button>
-          <Button type="submit" onClick={handleSubmit(onSubmit)} variant="contained" color="primary">
+          <Button
+            type="submit"
+            onClick={handleSubmit(onSubmit)}
+            variant="contained"
+            color="primary"
+          >
             Submit
           </Button>
         </DialogActions>
